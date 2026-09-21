@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SiFeeder</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="app">
+
+<svg width="0" height="0" class="svg-sprite" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-sync" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 3v13"/><path d="m7 11 5 5 5-5"/><path d="M4 21h16"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 21V8"/><path d="m7 13 5-5 5 5"/><path d="M4 3h16"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9h6v6H9z"/></symbol>
+    <symbol id="i-diff" viewBox="0 0 24 24"><path d="M9 3v14"/><path d="M6 6 9 3l3 3"/><path d="M15 21V7"/><path d="m18 18-3 3-3-3"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.4 8.4 8 9 4.6-.6 8-4 8-9V6z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  </defs>
+</svg>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"><svg class="icon"><use href="#i-sync"/></svg></div>
+    <div>
+      <h1>SiFeeder <span class="version-tag" id="appVersion"></span></h1>
+      <p>Sinkronisasi PDDIKTI dengan pratinjau dan konfirmasi</p>
+    </div>
+  </div>
+  <div class="topbar-meta">
+    <span class="meta-block" id="metaEndpoint">Endpoint: memuat...</span>
+    <span class="meta-block" id="metaToken">Token: -</span>
+    <span class="badge" id="connBadge"><span class="dot"></span> Memeriksa koneksi</span>
+    <button type="button" class="btn-sm btn-ghost" id="logoutButton">Keluar</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Bagian aplikasi">
+  <button class="tab" role="tab" id="tab-dashboard" data-view="dashboard" aria-selected="true" aria-controls="view-dashboard">
+    <svg class="icon icon-sm"><use href="#i-sync"/></svg> Tarik Data
+  </button>
+  <button class="tab" role="tab" id="tab-local" data-view="local" aria-selected="false" aria-controls="view-local">
+    <svg class="icon icon-sm"><use href="#i-file"/></svg> Data Lokal
+  </button>
+  <button class="tab" role="tab" id="tab-preview" data-view="preview" aria-selected="false" aria-controls="view-preview">
+    <svg class="icon icon-sm"><use href="#i-diff"/></svg> Pratinjau &amp; Kirim
+  </button>
+  <button class="tab" role="tab" id="tab-history" data-view="history" aria-selected="false" aria-controls="view-history">
+    <svg class="icon icon-sm"><use href="#i-clock"/></svg> Riwayat &amp; Audit
+  </button>
+  <button class="tab" role="tab" id="tab-settings" data-view="settings" aria-selected="false" aria-controls="view-settings">
+    <svg class="icon icon-sm"><use href="#i-shield"/></svg> Konfigurasi
+  </button>
+</nav>
+
+<main>
+
+  <!-- ============================ TARIK DATA ============================ -->
+  <section class="view" id="view-dashboard" role="tabpanel" aria-labelledby="tab-dashboard">
+    <ol class="steps" id="flowSteps">
+      <li data-step="pull">Tarik data Feeder</li>
+      <li data-step="import">Impor data lokal</li>
+      <li data-step="plan">Susun pratinjau</li>
+      <li data-step="dryrun">Simulasi</li>
+      <li data-step="apply">Kirim setelah konfirmasi</li>
+    </ol>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Tarik data dari Neo Feeder</h2>
+          <p>Ambil kondisi terkini dari server Feeder ke basis data lokal. Langkah ini wajib sebelum membandingkan data.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-3">
+        <label class="field">Entitas
+          <select id="pullEntity"></select>
+        </label>
+        <label class="field">Semester
+          <select id="pullSemester"><option value="">(semua)</option></select>
+        </label>
+        <label class="field">Program studi
+          <select id="pullProdi"><option value="">(semua)</option></select>
+        </label>
+      </div>
+
+      <p class="hint mt-sm" id="entityHint"></p>
+
+      <div class="row mt">
+        <button type="button" class="btn-primary" id="btnPull">
+          <svg class="icon icon-sm"><use href="#i-down"/></svg> Tarik Data
+        </button>
+        <button type="button" class="btn-danger" id="btnCancel" disabled>
+          <svg class="icon icon-sm"><use href="#i-stop"/></svg> Batalkan
+        </button>
+        <span class="spacer"></span>
+        <button type="button" class="btn-ghost btn-sm" id="btnPing">Uji koneksi</button>
+      </div>
+
+      <div class="notice notice-danger mt" id="connNotice" hidden></div>
+    </div>
+
+    <div class="card">
+      <div class="progress-head">
+        <div>
+          <h2 class="h-flat">Status proses</h2>
+          <p class="hint" id="jobSubtitle">Belum ada proses berjalan.</p>
+        </div>
+        <div class="text-right">
+          <div class="progress-percent" id="jobPercent">0%</div>
+          <div class="hint" id="jobCounter">0 / 0 record</div>
+        </div>
+      </div>
+      <div class="progress-track"><div class="progress-bar" id="jobBar"></div></div>
+
+      <div class="grid grid-4 mt">
+        <div class="stat"><span>Diproses</span><strong id="statProcessed">0</strong></div>
+        <div class="stat ok"><span>Berhasil</span><strong id="statSuccess">0</strong></div>
+        <div class="stat danger"><span>Gagal / ditolak</span><strong id="statFailed">0</strong></div>
+        <div class="stat warn"><span>Status tidak pasti</span><strong id="statUncertain">0</strong></div>
+        <div class="stat info"><span>Kecepatan</span><strong id="statRate">0/s</strong></div>
+        <div class="stat"><span>Perkiraan sisa</span><strong id="statEta">-</strong></div>
+      </div>
+
+      <p class="notice notice-warn" id="uncertainNotice" hidden></p>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Log aktivitas</h2><p>Catatan nyata dari proses yang sedang berjalan di server.</p></div>
+        <div class="row">
+          <button type="button" class="btn-sm btn-ghost" id="btnClearLog">Bersihkan tampilan</button>
+          <button type="button" class="btn-sm btn-ghost" id="btnExportLog">Unduh log</button>
+        </div>
+      </div>
+      <div class="terminal" id="terminal" aria-live="polite"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div><h2>Ringkasan entitas</h2><p>Jumlah record tersimpan di basis data lokal.</p></div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Entitas</th><th>Salinan Feeder</th><th>Data lokal</th><th>Terakhir ditarik</th><th>Operasi tulis</th></tr></thead>
+          <tbody id="entitySummary"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ DATA LOKAL ============================ -->
+  <section class="view" id="view-local" role="tabpanel" aria-labelledby="tab-local" hidden>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Impor data lokal (CSV)</h2>
+          <p>Berkas ini berisi nilai yang menurut Anda benar. Isinya dibandingkan dengan data Feeder, bukan langsung dikirim.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-3">
+        <label class="field">Entitas tujuan
+          <select id="importEntity"></select>
+        </label>
+        <label class="field">Berkas CSV
+          <input type="file" id="importFile" accept=".csv,text/csv">
+        </label>
+        <label class="field">&nbsp;
+          <button type="button" class="btn-primary" id="btnImport">Impor berkas</button>
+        </label>
+      </div>
+
+      <div class="row mt">
+        <button type="button" class="btn-sm btn-ghost" id="btnTemplate">Unduh template CSV</button>
+        <button type="button" class="btn-sm btn-ghost" id="btnClearLocal">Hapus data lokal entitas ini</button>
+      </div>
+
+      <div id="importResult" class="mt"></div>
+
+      <div class="notice notice-info mt">
+        Kolom kunci wajib ada di header CSV. Kolom di luar daftar kolom yang boleh
+        ditulis akan diabaikan dan dilaporkan, supaya tidak ada field tak dikenal
+        yang ikut terkirim ke PDDIKTI.
+      </div>
+
+      <div class="mt">
+        <h3 class="h-sub">Kolom untuk entitas terpilih</h3>
+        <dl class="dl" id="entityColumns"></dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= PRATINJAU & KIRIM ========================= -->
+  <section class="view" id="view-preview" role="tabpanel" aria-labelledby="tab-preview" hidden>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Susun pratinjau perubahan</h2>
+          <p>Bandingkan data lokal dengan salinan Feeder. Tidak ada yang terkirim pada langkah ini.</p>
+        </div>
+        <div class="row">
+          <label class="field field-inline">
+            <input type="checkbox" id="includeMatches" checked> Tampilkan yang identik
+          </label>
+          <button type="button" class="btn-primary" id="btnBuildPlan">
+            <svg class="icon icon-sm"><use href="#i-diff"/></svg> Bandingkan sekarang
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-4" id="planSummary"></div>
+      <p class="hint mt-sm" id="planMeta"></p>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Rincian perbedaan</h2><p>Hanya baris tercentang yang akan dikirim.</p></div>
+        <div class="row">
+          <label class="field field-inline">
+            <input type="checkbox" id="onlyChanges"> Sembunyikan yang identik
+          </label>
+          <button type="button" class="btn-sm btn-ghost" id="btnExportPlan">Unduh rencana (CSV)</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-check"><input type="checkbox" id="checkAll" aria-label="Pilih semua"></th>
+              <th>Kunci record</th>
+              <th>Status</th>
+              <th>Aksi</th>
+              <th>Perubahan (lokal &rarr; Feeder)</th>
+              <th>Hasil</th>
+            </tr>
+          </thead>
+          <tbody id="diffBody"><tr><td colspan="6" class="empty">Belum ada rencana. Tekan "Bandingkan sekarang".</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="row mt">
+        <button type="button" class="btn-sm btn-ghost" id="btnPrevPage" disabled>Sebelumnya</button>
+        <span class="hint" id="pageInfo"></span>
+        <button type="button" class="btn-sm btn-ghost" id="btnNextPage" disabled>Berikutnya</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Kirim ke Neo Feeder</h2>
+          <p>Simulasi wajib dijalankan lebih dulu. Simulasi tidak menyentuh data PDDIKTI sama sekali.</p>
+        </div>
+      </div>
+      <div class="row">
+        <button type="button" id="btnDryRun" disabled>Jalankan simulasi</button>
+        <button type="button" class="btn-ok" id="btnApply" disabled>Kirim sungguhan</button>
+        <span class="spacer"></span>
+        <span class="badge" id="dryRunBadge">Simulasi belum dijalankan</span>
+      </div>
+      <div class="notice notice-warn mt">
+        Penulisan ke PDDIKTI tidak dapat dibatalkan dari aplikasi ini. Nilai lama
+        setiap record disimpan pada rencana sebagai bahan pemulihan manual, dan
+        unduhan CSV rencana sebaiknya diarsipkan sebelum mengirim.
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= RIWAYAT & AUDIT ========================= -->
+  <section class="view" id="view-history" role="tabpanel" aria-labelledby="tab-history" hidden>
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Rencana sinkronisasi</h2><p>Setiap rencana menyimpan nilai sebelum dan sesudah perubahan.</p></div>
+        <button type="button" class="btn-sm btn-ghost" id="btnReloadPlans">Muat ulang</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Dibuat</th><th>Entitas</th><th>Status</th><th>Ringkasan</th><th>Hasil</th><th></th></tr></thead>
+          <tbody id="planList"><tr><td colspan="6" class="empty">Belum ada rencana.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Jejak audit</h2><p>Semua aksi yang mengubah keadaan tercatat di sini.</p></div>
+        <button type="button" class="btn-sm btn-ghost" id="btnExportAudit">Unduh audit (CSV)</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Waktu</th><th>Pengguna</th><th>Aksi</th><th>Entitas</th><th>Detail</th></tr></thead>
+          <tbody id="auditList"><tr><td colspan="5" class="empty">Belum ada catatan.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ KONFIGURASI ============================ -->
+  <section class="view" id="view-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Konfigurasi aktif</h2>
+          <p>Nilai di bawah hanya untuk ditampilkan. Semuanya diatur lewat berkas <code>.env</code> di server.</p>
+        </div>
+      </div>
+      <dl class="dl" id="settingsList"></dl>
+      <div id="securityNotices" class="mt stack"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Periksa skema entitas (GetDictionary)</h2>
+          <p>Baca daftar field <code>key</code> dan <code>record</code> yang sebenarnya berlaku di server Anda, bukan tebakan.</p>
+        </div>
+      </div>
+      <div class="row">
+        <label class="field grow">Nama fungsi WS
+          <input type="text" id="dictFungsi" placeholder="UpdatePerkuliahanMahasiswa">
+        </label>
+        <button type="button" id="btnDict">Ambil skema</button>
+      </div>
+      <pre id="dictResult" hidden></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div><h2>Catatan keamanan</h2></div></div>
+      <ul class="bullets">
+        <li>Kredensial Feeder hanya ada di server dan tidak pernah dikirim ke peramban.</li>
+        <li>Token Feeder disimpan di memori proses backend, tidak di penyimpanan peramban.</li>
+        <li>Operasi tulis tidak pernah diulang otomatis saat jawaban tidak diterima, agar tidak menimbulkan data ganda.</li>
+        <li>Kata sandi aplikasi disimpan sebagai turunan PBKDF2, bukan teks polos.</li>
+        <li>Log memakai rotasi berkas dan menyamarkan NIM, nama, serta NIK.</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<dialog id="confirmDialog">
+  <h3>Konfirmasi pengiriman ke PDDIKTI</h3>
+  <p id="confirmText"></p>
+  <label class="field">Ketik <strong>KIRIM</strong> untuk melanjutkan
+    <input type="text" id="confirmInput" autocomplete="off">
+  </label>
+  <div class="dialog-actions">
+    <button type="button" class="btn-ghost" id="confirmCancel">Batal</button>
+    <button type="button" class="btn-ok" id="confirmOk" disabled>Kirim sekarang</button>
+  </div>
+</dialog>
+
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+<script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

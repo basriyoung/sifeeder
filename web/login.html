@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Masuk - SiFeeder</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="login-page">
+  <div class="card login-card">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+      </div>
+      <div>
+        <h1>SiFeeder</h1>
+        <p>Jembatan sinkronisasi PDDIKTI</p>
+      </div>
+    </div>
+
+    <form id="loginForm" autocomplete="on">
+      <label class="field">Nama pengguna aplikasi
+        <input type="text" id="username" name="username" autocomplete="username" required autofocus>
+      </label>
+      <label class="field">Kata sandi aplikasi
+        <input type="password" id="password" name="password" autocomplete="current-password" required>
+      </label>
+      <p id="loginError" class="notice notice-danger" hidden></p>
+      <button type="submit" class="btn-primary" id="loginButton">Masuk</button>
+    </form>
+
+    <p class="hint mt">
+      Ini kata sandi aplikasi, bukan kata sandi Neo Feeder. Kredensial Feeder
+      dibaca server dari berkas <code>.env</code> dan tidak pernah dikirim ke peramban.
+    </p>
+  </div>
+
+  <script type="module" src="/static/js/login.js"></script>
+</body>
+</html>
